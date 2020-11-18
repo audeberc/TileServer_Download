@@ -22,7 +22,9 @@ int main(int argc, char *argv[])
     int opt{0};
     std::string opt2{""};
     po::options_description desc("Allowed options");
-    desc.add_options()("help", "produce help message")("zmin", po::value<int>(&opt)->default_value(0), "Min zoom level (default 0)")("zmax", po::value<int>(&opt)->default_value(18), "Max zoom level (default 18)")("bounds", po::value<std::string>(&opt2)->default_value(""), "Bounding box. comma-separated values 'lonMin,latMin,lonMax,latMax'")("url", po::value<std::string>(), "Tile server URL")("out", po::value<std::string>(), "Out folder path");
+    desc.add_options()("help", "produce help message")("zmin", po::value<int>(&opt)->default_value(0), "Min zoom level (default 0)")("zmax", po::value<int>(&opt)->default_value(18), "Max zoom level (default 18)")("bounds", po::value<std::string>(&opt2)->default_value(""), "Bounding box. comma-separated values 'lonMin,latMin,lonMax,latMax'")("url", po::value<std::string>(), "Tile server URL")("out", po::value<std::string>(), "Out folder path")
+    ("geotiff", po::bool_switch()->default_value(false),
+    "Merge tiles at maxZ into a single GeoTiff");
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);
@@ -38,6 +40,7 @@ int main(int argc, char *argv[])
         std::string tile_server_url = vm["url"].as<std::string>();
         std::string bounds = vm["bounds"].as<std::string>();
         std::string out = vm["out"].as<std::string>();
+        bool geotiff_export = vm.count("geotiff");
         int zmin = (vm["zmin"]).as<int>();
         int zmax = (vm["zmax"]).as<int>();
         std::cout << "Scapping tile server: "
@@ -88,8 +91,10 @@ int main(int argc, char *argv[])
                         fs::path dir1(std::to_string(z));
                         fs::path dir2(std::to_string(x));
                         fs::path dir3(std::to_string(y));
+                        std::cout << tile_server_url << std::endl;
+                        
                         download_utils::downloadFile(tile_server_url.c_str(), (dir0 / dir1 / dir2 / dir3).c_str());
-                        if (x + y + z % 15 == 0)
+                        if (x + y + z % 100 == 0)
                         {
                             usleep(500 * 1000);
                         }
