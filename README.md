@@ -10,7 +10,7 @@
 
 ## Usage
 
-> ./xyz_tilescrapper --url {tile server url, including x,y,z in brackets} --out {path to out folder} [--zmin {minimum zoom level} --zmax {maximum zoom level} --bounds {comma-separated values 'lonMin,latMin,lonMax,latMax'}]
+> ./xyz_tilescrapper --url {tile server url, including x,y,z in brackets} --out {path to out folder} [--zmin {minimum zoom level} --zmax {maximum zoom level} --bounds {comma-separated values 'lonMin,latMin,lonMax,latMax'} --geotiff {Option to geo-reference tiles as geotiffs}]
 
 Example:
 
