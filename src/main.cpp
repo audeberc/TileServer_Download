@@ -10,8 +10,8 @@
 #include <boost/filesystem.hpp>
 #include <boost/progress.hpp>
 #include "string_utils.hpp"
-#include "map_utils.hpp"
 #include "download_utils.hpp"
+#include "geo_utils.hpp"
 
 namespace fs = boost::filesystem;
 namespace po = boost::program_options;
@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
     po::notify(vm);
 
     if (vm.count("help"))
-    {
+    { 
         std::cout << desc << std::endl;
         return 1;
     }
@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
         std::string tile_server_url = vm["url"].as<std::string>();
         std::string bounds = vm["bounds"].as<std::string>();
         std::string out = vm["out"].as<std::string>();
-        bool geotiff_export = vm.count("geotiff");
+        bool geotiff_export = vm["geotiff"].as<bool>();
         int zmin = (vm["zmin"]).as<int>();
         int zmax = (vm["zmax"]).as<int>();
         std::cout << "Scapping tile server: "
@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
 
         if (tile_server_url.find("{x}") != std::string::npos && tile_server_url.find("{y}") != std::string::npos && tile_server_url.find("{z}") != std::string::npos)
         {
-            boost::progress_display progress(zmax - zmin + 1);
+            
             std::vector<float> bounds_val;
             if (bounds == "")
             {
@@ -59,19 +59,24 @@ int main(int argc, char *argv[])
                 string_utils::parse_bounds(bounds, bounds_val);
             }
 
+            if (geotiff_export) {
+                    zmin = zmax;                    
+                }
+            boost::progress_display progress(zmax - zmin + 1);
             for (int z = zmin; z < zmax + 1; z++)
             {
-                int n = (1 << z);
+                int n = (1 << z);                
                 int xtile_min = 0;
                 int xtile_max = n + 1;
                 int ytile_min = 0;
                 int ytile_max = n + 1;
+
                 if (bounds_val.size() == 4)
                 {
-                    xtile_min = map_utils::lon_to_xtile(bounds_val[0], n);
-                    xtile_max = map_utils::lon_to_xtile(bounds_val[2], n) + 1;
-                    int ytile_a = map_utils::lat_to_ytile(bounds_val[1], n); 
-                    int ytile_b = map_utils::lat_to_ytile(bounds_val[3], n);
+                    xtile_min = geo_utils::lon_to_xtile(bounds_val[0], n);
+                    xtile_max = geo_utils::lon_to_xtile(bounds_val[2], n) + 1;
+                    int ytile_a = geo_utils::lat_to_ytile(bounds_val[1], n); 
+                    int ytile_b = geo_utils::lat_to_ytile(bounds_val[3], n);
                     ytile_min = std::min(ytile_a, ytile_b);
                     ytile_max = std::max(ytile_a, ytile_b) + 1;
                 }
@@ -90,10 +95,11 @@ int main(int argc, char *argv[])
                         fs::path dir0(out);
                         fs::path dir1(std::to_string(z));
                         fs::path dir2(std::to_string(x));
-                        fs::path dir3(std::to_string(y));
-                        std::cout << tile_server_url << std::endl;
-                        
+                        fs::path dir3(std::to_string(y));                        
                         download_utils::downloadFile(tile_server_url.c_str(), (dir0 / dir1 / dir2 / dir3).c_str());
+                        if (geotiff_export) {
+                            geo_utils::georeference_image(x, y, z, (dir0 / dir1 / dir2 / dir3).c_str());
+                        }
                         if (x + y + z % 100 == 0)
                         {
                             usleep(500 * 1000);
